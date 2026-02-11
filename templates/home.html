@@ -6,6 +6,23 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>home</h1>
+    
+    {% if titulo_pagina %}
+    <h1>{{titulo_pagina}}</h1>
+    {% else %}
+    <h1>Título predeterminado</h1>
+    {% endif %}
+
+    <p>{{primer_parrafo}}</p>
+
+    {{datos[0]["autor"]}}
+
+    {% for post in datos %}
+
+        <h2>{{post.titulo}}</h2>
+        <p>{{post.contenido}}</p>
+        <p>Escrito por {{post.autor}} - {{post.data_post}}</p>
+
+    {% endfor %}
 </body>
 </html>
