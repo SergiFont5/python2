@@ -27,11 +27,11 @@ Primero hay que crear el entorno virtual. Luego:
     pip install -r requirements.txt
 '''
 import logging
+import jinja2
 from flask import Flask, render_template
 
 app = Flask(__name__)
-
-app.config['DEBUG'] = True
+app.jinja_env.undefined = jinja2.StrictUndefined # para forzar errores en valores undefined en el html
 
 datos_posts = [
     {
@@ -65,7 +65,16 @@ def darInfo():
 
 @app.route("/contacto")
 def getContactos():
-    return render_template("contactos.html")
+    return render_template(
+        "contactos.html",
+        titulo_pagina="Página contacto"
+        )
+
+@app.errorhandler(404)
+def paginaError(e):
+    return render_template(
+        "not_found.html"
+    ), 404
 
 ## __name__ obtiene el valor "__main__" por defecto 
 if __name__ == "__main__":
