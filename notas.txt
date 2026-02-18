@@ -1,0 +1,2 @@
+Queremos crear un entorno virtual cuando necesitamos utilizar dependencias.
+La carpeta con los template debe llamarse "templates", si no flask no lo reconoce.

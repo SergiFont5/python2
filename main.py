@@ -28,7 +28,7 @@ Primero hay que crear el entorno virtual. Luego:
 '''
 import logging
 import jinja2
-from flask import Flask, render_template
+from flask import Flask, render_template, request, url_for, redirect
 
 app = Flask(__name__)
 app.jinja_env.undefined = jinja2.StrictUndefined # para forzar errores en valores undefined en el html
@@ -68,6 +68,21 @@ def getContactos():
     return render_template(
         "contactos.html",
         titulo_pagina="Página contacto"
+        )
+
+@app.route("/registro", methods=["GET", "POST"])
+def getRegistro():
+    if request.method == "POST":
+        nombre = request.form["nombre"]
+        apellido = request.form["apellido"]
+        password = request.form["password"]
+        email = request.form["email"]
+        print(f"{nombre} - {apellido} - {email} - {password}")
+        return redirect(url_for("iniciarApp"))
+    
+    return render_template(
+        "registro.html", 
+        titulo_pagina="Registro"
         )
 
 @app.errorhandler(404)
