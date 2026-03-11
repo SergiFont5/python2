@@ -25,13 +25,28 @@ Realizar todo el rato que se añadan dependencias nuevas
 Descargar dependencias del proyecto a partir de requirements.txt:
 Primero hay que crear el entorno virtual. Luego:
     pip install -r requirements.txt
+
+Base de dades utilitzada:
+PostgreSQL (postgres)
+Dependència per utilitzar-la des de Python: psycopg2-binary
+Dependència per utilitzar posgres amb funcions des de Flask: flask_sqlalchemy
 '''
-import logging
-import jinja2
+
 from flask import Flask, render_template, request, url_for, redirect
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+import hashlib, binascii, os, jinja2, logging
+
+from werkzeug.utils import *
+from strings_configuracion import StringsConfiguracion
+from extensions import db
 
 app = Flask(__name__)
 app.jinja_env.undefined = jinja2.StrictUndefined # para forzar errores en valores undefined en el html
+
+# BD =========================
+app.config.from_object(StringsConfiguracion)
+db.init_app(app)
+# ============================
 
 datos_posts = [
     {
@@ -70,6 +85,25 @@ def getContactos():
         titulo_pagina="Página contacto"
         )
 
+def get_hash_password(password_str: str) -> str:
+
+    # Hay una manera de encontrar passwords de usuarios con las rainbow tables
+    # Rainbow tables: consiste en generar muchas passwords, y para cada una aplicarle
+    # las diferentes funciones de hash que hay. Cada resultado de estos hash, se guardan
+    # en una tabla (Rainbow table). Los passwords suelen ser comunes estadísticamente.
+    # Si alguien externo obtiene acceso a la base de datos donde se guardan los hash de los passwords,
+    # puede comprobar con la Rainbow table si el hash se encuentra en la BD, obteniendo contraseñas
+    # de esta manera.
+    # La estructura de dichas tablas hace su búsqueda muy rápida y eficiente.
+
+    salt = os.urandom(16) # forma un salt de 16 bytes.
+    # se hace un hash concatenando los bytes con el password
+    hash_en_bytes = hashlib.sha256(salt + password_str.encode("utf-8")).digest()
+    salt_y_hash_en_bytes = salt + hash_en_bytes # se concatena
+    salt_y_hash_en_str = binascii.hexlify(salt_y_hash_en_bytes).decode("utf-8") #se pasan a string
+    print(salt_y_hash_en_str)
+    return salt_y_hash_en_str
+
 @app.route("/registro", methods=["GET", "POST"])
 def getRegistro():
     if request.method == "POST":
@@ -78,6 +112,9 @@ def getRegistro():
         password = request.form["password"]
         email = request.form["email"]
         print(f"{nombre} - {apellido} - {email} - {password}")
+
+        hash_password = get_hash_password(password)
+
         return redirect(url_for("iniciarApp"))
     
     return render_template(

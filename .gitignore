@@ -30,3 +30,5 @@ build/
 # Base de datos local
 *.db
 *.sqlite3
+
+strings_configuracion.py
