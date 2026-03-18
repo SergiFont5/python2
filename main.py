@@ -40,6 +40,8 @@ from werkzeug.utils import *
 from strings_configuracion import StringsConfiguracion
 from extensions import db
 
+from models.usuario import Usuario
+
 app = Flask(__name__)
 app.jinja_env.undefined = jinja2.StrictUndefined # para forzar errores en valores undefined en el html
 
@@ -47,6 +49,21 @@ app.jinja_env.undefined = jinja2.StrictUndefined # para forzar errores en valore
 app.config.from_object(StringsConfiguracion)
 db.init_app(app)
 # ============================
+
+# SESSIONS =====================
+login_manager = LoginManager(app)
+# En un navegador, podem escriure qualsevol url manualment (barra de dalt).
+# Pot ser que hi hagi rutes protegides (ex.: només per usuaris amb la sessió iniciada).
+# Si escrivissin una d'aquestes rutes sense la sessió iniciada, redirigim a la pàgina de login.
+
+login_manager.login_view = "getRegistro" # nos lleva a esta ruta cuando se inicia la sesion.
+
+@login_manager.user_loader
+def cargar_usuario(id_usuario):
+    print("Sesion iniciado con usuario " + id_usuario)
+
+    return db.session.get(Usuario, int(id_usuario))
+# ==============================
 
 datos_posts = [
     {
@@ -115,6 +132,27 @@ def getRegistro():
 
         hash_password = get_hash_password(password)
 
+        # guardar usuario en base de datos.
+        email_existente = Usuario.query.filter_by(email=email).first()
+        print(email)
+        if email_existente:
+            print("Error: este mail ya está en uso.")
+            return render_template("registro.html", titulo_pagina="Registro")
+        
+        usuario_existente = Usuario.query.filter_by(nombre_usuario=nombre).first()
+        if usuario_existente:
+            print("Error: el nombre de usuario ya está en uso")
+            return render_template("registro.html", titulo_pagina="Registro")
+        
+        # si el usuario no existe
+        usuario = Usuario(
+            nombre_usuario=nombre,
+            email=email,
+            hash_password=password
+        )
+        db.session.add(usuario)
+        db.session.commit()
+
         return redirect(url_for("iniciarApp"))
     
     return render_template(
@@ -125,9 +163,14 @@ def getRegistro():
 @app.errorhandler(404)
 def paginaError(e):
     return render_template(
-        "not_found.html"
+        "not_found.html", titulo_pagina="error"
     ), 404
 
 ## __name__ obtiene el valor "__main__" por defecto 
 if __name__ == "__main__":
+    # DB =========================
+    with app.app_context():
+        # Crear las tablas de la BD si no existen.
+        db.create_all()
+    # ============================
     app.run(debug=True)
