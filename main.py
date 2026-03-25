@@ -121,6 +121,18 @@ def get_hash_password(password_str: str) -> str:
     print(salt_y_hash_en_str)
     return salt_y_hash_en_str
 
+# verificar password
+def verificar_password(hash_db_str:str, password_a_comprovar:str) -> bool:
+    hash_bd_bytes = binascii.unhexlify(hash_db_str.encode("utf-8"))
+    salt_bd = hash_bd_bytes[:16]
+    hash_bd = hash_bd_bytes[16:]
+
+    # Apliquem el salt al password que ha escrit l'usuari (pel login).
+    salt_password_a_comprovar = salt_bd + password_a_comprovar.encode("utf-8")
+    hash_password_a_comprovar = hashlib.sha256(salt_password_a_comprovar).digest()
+
+    return hash_bd == hash_password_a_comprovar
+
 @app.route("/registro", methods=["GET", "POST"])
 def getRegistro():
     if request.method == "POST":
@@ -159,6 +171,39 @@ def getRegistro():
         "registro.html", 
         titulo_pagina="Registro"
         )
+
+## login
+@app.route("/login", methods=["GET", "POST"])
+def pagina_login():
+
+    if request.method == "POST":
+        email_rebut = request.form["email"]
+        password_rebut = request.form["password"]
+
+        print(email_rebut)
+
+        usuari = Usuario.query.filter_by(email=email_rebut).first()
+
+        if usuari and verificar_password(usuari.hash_password, password_rebut):
+
+        # Fem login.
+            login_user(usuari)
+            return redirect(url_for("iniciarApp"))
+
+    else:
+        return render_template("login.html", titol_pagina="Login")
+
+@app.route("/gestion_usuarios")
+@login_required
+def gestion_usuarios():
+    usuarios_bd = Usuario.query.all()
+    return render_template("gestion_usuarios.html", titulo_pagina="Gestion usuarios", usuarios=usuarios_bd)
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("iniciarApp"))
 
 @app.errorhandler(404)
 def paginaError(e):

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block contingut %}
+
+<h1>Gestió usuaris</h1>
+
+{% for usuario in usuarios %}
+
+{{usuario.email}} - {{usuario.hash_password}}
+
+<br>
+
+{% endfor %}
+
+<a href="/logout">Cerrar sesión</a>
+
+{% endblock %}
